@@ -49,7 +49,7 @@ public class Server {
     }
 
     public static void noteLog(String msg) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("./log.txt", true))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("./log.md", true))) {
             writer.write(msg);
         } catch (IOException e) {
             e.printStackTrace();
@@ -115,8 +115,12 @@ class StartChat implements Runnable {
         String rec = "";
         switch (StartChat.op) {
             case 0 -> {
-                Server.noteLog((LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))) + "\n"
-                        + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " aksed Spark: " + str + "\n"); // 记录日志
+                Server.noteLog(
+                        ("## **" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                                + "**\n\n### **"
+                                + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " aksed Spark:** \n\n"
+                                + str
+                                + "\n"); // 记录日志
                 synchronized (lock) {
                     spark.text = str;
                     spark.flag = true;
@@ -124,11 +128,14 @@ class StartChat implements Runnable {
                     rec = spark.getAns(); // 获取回答
                     spark.text = "";
                 }
-                Server.noteLog("Spark answered: " + rec + "\n\n"); // 记录日志
+                Server.noteLog("\n**Spark answered:** \n\n" + rec + "\n\n"); // 记录日志
             }
             case 1 -> {
-                Server.noteLog((LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))) + "\n"
-                        + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " aksed Qwen: " + str + "\n"); // 记录日志
+                Server.noteLog(
+                        ("## **" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                                + "**\n\n### **"
+                                + clientSocket.getInetAddress() + ":" + clientSocket.getPort() + " aksed Qwen: " + str
+                                + "**\n"); // 记录日志
                 qw.text = str;
                 qw.flag = true;
                 qw.setFlag(true);
@@ -138,7 +145,7 @@ class StartChat implements Runnable {
                 }
                 rec = qw.returnText; // 获取回答
                 qw.text = "";
-                Server.noteLog("Qwen answered: " + rec + "\n\n"); // 记录日志
+                Server.noteLog("\n**Qwen answered:** \n\n" + rec + "\n\n"); // 记录日志
             }
             default -> {
             }

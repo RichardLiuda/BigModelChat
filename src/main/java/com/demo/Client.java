@@ -6,8 +6,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import javax.swing.JPanel;
-
 class Client {
     private final String SERVER_ADDRESS = "localhost";
     private final int SERVER_PORT = 11451;
@@ -36,16 +34,18 @@ class Client {
 
     public void sentChat(String str) throws Exception { // 发送消息
         out.println(str);
+        Thread.sleep(500);
         if (!waitingFlag) {
+            waitingFlag = true;
             waiting = new Waiting();
             waitingThread = new Thread(waiting);
-            waitingFlag = true;
             waitingThread.start();
         }
     }
 
     private class ReceiveChat implements Runnable { // 接收消息
         private Socket socket;
+        // Boolean flag;
 
         public ReceiveChat(Socket socket) {
             this.socket = socket;
@@ -56,21 +56,23 @@ class Client {
             try {
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 String message;
-                Boolean flag = true;
+                // flag = true;
                 while ((message = in.readLine()) != null) { // 监听消息
-                    if (flag) {
-                        chatPage.chatPanel.remove(chatPage.chatPanel.getComponentCount() - 1); // 移除等待消息
-                        flag = false;
-                    }
                     if (waitingThread.isAlive()) { // 如果等待线程在运行，则停止等待线程
                         waitingFlag = false;
                         waitingThread.interrupt();
                     }
+                    try {
+                        Thread.sleep(300);
+                    } catch (InterruptedException e) {
+                    }
+                    chatPage.removeWaiting();
                     if (!message.equals("")) { // 如果消息不为空，则显示消息
                         System.out.println("Received: " + message);
                         chatPage.addChatBubble(message, false);
                     }
                 }
+                // flag = true;
             } catch (IOException e) {
                 System.err.println(e.getMessage());
             }
@@ -81,12 +83,10 @@ class Client {
         @Override
         public void run() {
             String waitingLabel = "正在等待对方回复";
-            JPanel waitingPanel = chatPage.createChatBubble(waitingLabel, false);
             System.out.println("Waiting...");
-            chatPage.addChatBubble(waitingLabel, false);
+            chatPage.addWaitingBubble(waitingLabel, false);
             chatPage.revalidate();
             chatPage.repaint();
-            int count = chatPage.chatPanel.getComponentCount();
 
             while (waitingFlag) {
                 try {
@@ -95,17 +95,8 @@ class Client {
                 }
 
                 if (waitingFlag) {
-                    waitingLabel = "正在等待对方回复";
-                    chatPage.changeTextByIndex(waitingLabel, count - 1);
-                }
-                try {
-                    Thread.sleep(200); // 每200毫秒更新一次
-                } catch (InterruptedException e) {
-                }
-
-                if (waitingFlag) {
                     waitingLabel = "正在等待对方回复.";
-                    chatPage.changeTextByIndex(waitingLabel, count - 1);
+                    chatPage.changeTextByIndex(waitingLabel);
                 }
                 try {
                     Thread.sleep(200); // 每200毫秒更新一次
@@ -114,7 +105,7 @@ class Client {
 
                 if (waitingFlag) {
                     waitingLabel = "正在等待对方回复..";
-                    chatPage.changeTextByIndex(waitingLabel, count - 1);
+                    chatPage.changeTextByIndex(waitingLabel);
                 }
                 try {
                     Thread.sleep(200); // 每200毫秒更新一次
@@ -123,7 +114,16 @@ class Client {
 
                 if (waitingFlag) {
                     waitingLabel = "正在等待对方回复...";
-                    chatPage.changeTextByIndex(waitingLabel, count - 1);
+                    chatPage.changeTextByIndex(waitingLabel);
+                }
+                try {
+                    Thread.sleep(200); // 每200毫秒更新一次
+                } catch (InterruptedException e) {
+                }
+
+                if (waitingFlag) {
+                    waitingLabel = "正在等待对方回复";
+                    chatPage.changeTextByIndex(waitingLabel);
                 }
             }
 

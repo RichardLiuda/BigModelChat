@@ -1,27 +1,12 @@
 package com.demo;
 
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.ArrayList;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.FontMetrics;
-import java.awt.Insets;
-import java.awt.event.*;
-
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
+import java.util.Arrays;
 
 public class Win extends JFrame {
     JTabbedPane p;
@@ -122,9 +107,9 @@ public class Win extends JFrame {
                     if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                         try {
                             String str = inputField.getText();
-                            client.sentChat(str);
                             addChatBubble(str, true);
                             inputField.setText("");
+                            client.sentChat(str);
                         } catch (Exception e1) {
                             System.err.println(e1);
                         }
@@ -139,9 +124,9 @@ public class Win extends JFrame {
                 String str = inputField.getText();
                 if (str.length() > 0) {
                     try {
-                        client.sentChat(str);
                         addChatBubble(str, true);
                         inputField.setText("");
+                        client.sentChat(str);
                     } catch (Exception e1) {
                         System.err.println(e1);
                     }
@@ -161,22 +146,6 @@ public class Win extends JFrame {
             chatPanel.add(createChatBubble("你好！有什么可以帮忙的？", false));
 
             add(scrollPane, BorderLayout.CENTER);
-        }
-
-        final JPanel createChatBubble(String text, boolean isUser) { // 创建聊天气泡
-            JPanel bubble = new JPanel();
-            bubble.setLayout(new FlowLayout(isUser ? FlowLayout.RIGHT : FlowLayout.LEFT));
-            JTextArea texts = new JTextArea(text);
-            texts.setEditable(false);
-            texts.setOpaque(true);
-            texts.setLineWrap(true); // 启用自动换行
-            texts.setWrapStyleWord(true);
-            texts.setBackground(isUser ? Color.BLUE : Color.GRAY);
-            texts.setForeground(Color.WHITE);
-            texts.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-            texts.setPreferredSize(calculatePreferredSize(texts, 600)); // 限制宽度
-            bubble.add(texts);
-            return bubble;
         }
 
         public static Dimension calculatePreferredSize(JTextArea textArea, int maxWidth) { // 计算文本区域的首选大小
@@ -199,9 +168,47 @@ public class Win extends JFrame {
             // 考虑内边距
             Insets insets = textArea.getInsets();
             int height = lines * lineHeight + insets.top + insets.bottom;
-            width += insets.left + insets.right + 5;
+            width += insets.left + insets.right + 10;
 
             return new Dimension(width, height);
+        }
+
+        class WaitingPanel extends JPanel {
+            WaitingPanel() {
+                super();
+            }
+        }
+
+        final WaitingPanel createWaitingBubble(String text, boolean isUser) { // 创建聊天气泡
+            WaitingPanel bubble = new WaitingPanel();
+            bubble.setLayout(new FlowLayout(isUser ? FlowLayout.RIGHT : FlowLayout.LEFT));
+            JTextArea texts = new JTextArea(text);
+            texts.setEditable(false);
+            texts.setOpaque(true);
+            texts.setLineWrap(true); // 启用自动换行
+            texts.setWrapStyleWord(true);
+            texts.setBackground(isUser ? Color.BLUE : Color.GRAY);
+            texts.setForeground(Color.WHITE);
+            texts.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+            texts.setPreferredSize(calculatePreferredSize(texts, 600)); // 限制宽度
+            bubble.add(texts);
+            return bubble;
+        }
+
+        final JPanel createChatBubble(String text, boolean isUser) { // 创建聊天气泡
+            JPanel bubble = new JPanel();
+            bubble.setLayout(new FlowLayout(isUser ? FlowLayout.RIGHT : FlowLayout.LEFT));
+            JTextArea texts = new JTextArea(text);
+            texts.setEditable(false);
+            texts.setOpaque(true);
+            texts.setLineWrap(true); // 启用自动换行
+            texts.setWrapStyleWord(true);
+            texts.setBackground(isUser ? Color.BLUE : Color.GRAY);
+            texts.setForeground(Color.WHITE);
+            texts.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+            texts.setPreferredSize(calculatePreferredSize(texts, 600)); // 限制宽度
+            bubble.add(texts);
+            return bubble;
         }
 
         public void addChatBubble(String text, boolean isUser) { // 添加聊天气泡
@@ -214,10 +221,21 @@ public class Win extends JFrame {
             });
         }
 
-        synchronized public JPanel changeTextByIndex(String text, int index) { // 根据气泡索引更改气泡文本
+        public void addWaitingBubble(String text, boolean isUser) { // 添加聊天气泡
+            chatPanel.add(createWaitingBubble(text, isUser));
+            chatPanel.revalidate();
+            chatPanel.repaint();
+            SwingUtilities.invokeLater(() -> {
+                JScrollBar vertical = scrollPane.getVerticalScrollBar();
+                vertical.setValue(vertical.getMaximum());
+            });
+        }
+
+        synchronized public void changeTextByIndex(String text) { // 根据气泡索引更改气泡文本
             JPanel newBubble;
+            int index = chatPanel.getComponentCount() - 1;
             chatPanel.remove(index);
-            newBubble = createChatBubble(text, false);
+            newBubble = createWaitingBubble(text, false);
             chatPanel.add(newBubble);
             chatPanel.revalidate();
             chatPanel.repaint();
@@ -225,11 +243,19 @@ public class Win extends JFrame {
                 JScrollBar vertical = scrollPane.getVerticalScrollBar();
                 vertical.setValue(vertical.getMaximum());
             });
-            return newBubble;
         }
 
-        public void _flush() {
-            flush();
+        synchronized public void removeWaiting() {
+            ArrayList<Component> components = new ArrayList<>(Arrays.asList(chatPanel.getComponents()));
+            for (int i = 0; i < components.size(); i++) {
+                Component panel = components.get(i);
+                if (components.get(i) instanceof WaitingPanel) {
+                    chatPanel.remove(i);
+                    System.out.println(i);
+                    chatPanel.revalidate();
+                    chatPanel.repaint();
+                }
+            }
         }
     }
 }
